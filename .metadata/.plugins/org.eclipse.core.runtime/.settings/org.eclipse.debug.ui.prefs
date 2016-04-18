@@ -1,0 +1,6 @@
+#Wed Feb 03 11:46:19 CST 2016
+org.eclipse.debug.ui.switch_perspective_on_suspend=always
+eclipse.preferences.version=1
+preferredDetailPanes=DefaultDetailPane\:DefaultDetailPane|
+preferredTargets=default\:default|
+org.eclipse.debug.ui.PREF_LAUNCH_PERSPECTIVES=<?xml version\="1.0" encoding\="UTF-8" standalone\="no"?>\r\n<launchPerspectives/>\r\n
