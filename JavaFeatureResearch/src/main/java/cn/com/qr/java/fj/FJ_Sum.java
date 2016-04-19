@@ -4,7 +4,7 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Future;
 import java.util.concurrent.RecursiveTask;
 
-public class TestFJ extends RecursiveTask<Long> {
+public class FJ_Sum extends RecursiveTask<Long> {
 	private static final long serialVersionUID = 1L;
 	/**
 	 * 起始数
@@ -25,7 +25,7 @@ public class TestFJ extends RecursiveTask<Long> {
 	 * @param endNum   终止数
 	 * @param threshold  分割阀值
 	 */
-	public TestFJ(long startNum, long endNum, long threshold) {
+	public FJ_Sum(long startNum, long endNum, long threshold) {
 		this.startNum = startNum;
 		this.endNum = endNum;
 		this.threshold = threshold;
@@ -47,8 +47,8 @@ public class TestFJ extends RecursiveTask<Long> {
 			/* 分割成两个 Task */
 			long middle = (startNum + endNum) / 2;
 			// 创建子任务对象
-			TestFJ subTask1 = new TestFJ(startNum, middle, threshold);
-			TestFJ subTask2 = new TestFJ(middle + 1, endNum, threshold);
+			FJ_Sum subTask1 = new FJ_Sum(startNum, middle, threshold);
+			FJ_Sum subTask2 = new FJ_Sum(middle + 1, endNum, threshold);
 			// 执行子任务
 			invokeAll(subTask1, subTask2);
 //			subTask1.fork();
@@ -66,6 +66,7 @@ public class TestFJ extends RecursiveTask<Long> {
 	 * @param args
 	 */
 	public static void main(String[] args) throws Exception {
+		long startTime = System.currentTimeMillis();
 		/*
 		 *  创建工作线程池
 		 *  可以使用带参数的构造器来指定工作线程数
@@ -73,9 +74,8 @@ public class TestFJ extends RecursiveTask<Long> {
 		 */
 		ForkJoinPool fjPool = new ForkJoinPool();
 		
-		long startTime = System.currentTimeMillis();
 		
-		TestFJ testFJ = new TestFJ(1, 10000000, 6000000);
+		FJ_Sum testFJ = new FJ_Sum(1, 10000000, 6000000);
 		Future<Long> result = fjPool.submit(testFJ);
 		
 		System.out.println("FJ result [" + result.get() +  "]" + "\t\tTime [" + (System.currentTimeMillis() - startTime) + "ms]");
