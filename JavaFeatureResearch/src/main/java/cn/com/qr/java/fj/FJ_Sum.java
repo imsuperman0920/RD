@@ -75,7 +75,7 @@ public class FJ_Sum extends RecursiveTask<Long> {
 		ForkJoinPool fjPool = new ForkJoinPool();
 		
 		
-		FJ_Sum testFJ = new FJ_Sum(1, 10000000, 6000000);
+		FJ_Sum testFJ = new FJ_Sum(1, 100000000, 6000000);
 		Future<Long> result = fjPool.submit(testFJ);
 		
 		System.out.println("FJ result [" + result.get() +  "]" + "\t\tTime [" + (System.currentTimeMillis() - startTime) + "ms]");
@@ -83,7 +83,7 @@ public class FJ_Sum extends RecursiveTask<Long> {
 		
 		startTime = System.currentTimeMillis();
 		long resultNum = 0;
-		for(int i = 1;i <= 10000000;i ++) {
+		for(int i = 1;i <= 100000000;i ++) {
 			resultNum += i;
 		}
 		System.out.println("LOOP result [" + resultNum +  "]" + "\t\tTime [" + (System.currentTimeMillis() - startTime) + "ms]");
