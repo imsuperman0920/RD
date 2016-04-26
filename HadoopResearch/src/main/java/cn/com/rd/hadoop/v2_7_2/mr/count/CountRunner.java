@@ -3,6 +3,8 @@ package cn.com.rd.hadoop.v2_7_2.mr.count;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.FileOutputFormat;
 import org.apache.hadoop.mapred.JobClient;
@@ -28,7 +30,11 @@ public class CountRunner extends Configured implements Tool {
 		if(args == null || args.length < 2) {
 			return 1;
 		}
-		// job 属性信息设置
+		/*
+		 *  job 属性信息设置
+		 *  构造方法中会调用 setJarByClass
+		 *  注意：用 Eclipse 打包时需选择 Extract required libraries into generated JAR，不然 Hadoop 找不到 job jar
+		 */
 		JobConf jobConf = new JobConf(getConf(), CountRunner.class);
 		// 设置 job 名称
 		jobConf.setJobName("CountRunner");
@@ -45,6 +51,16 @@ public class CountRunner extends Configured implements Tool {
 		 *  该路径为 HDFS 路径
 		 */
 		FileInputFormat.setInputPaths(jobConf, new Path(args[0]));
+		/*
+		 *  设置输出 key 类型
+		 *  如不设置会报 IOException:Type mismatch in key from map
+		 */
+		jobConf.setOutputKeyClass(Text.class);
+		/*
+		 *  设置输出 value 类型
+		 *  如不设置会报 IOException:Type mismatch in key from map
+		 */
+		jobConf.setOutputValueClass(IntWritable.class);
 		/*
 		 *  设置输出路径
 		 *  该路径为 HDFS 路径

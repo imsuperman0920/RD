@@ -12,6 +12,7 @@ import org.apache.hadoop.mapred.Reporter;
 
 /**
  * Mapper<Map输入key类型, Map输入value类型, Map输出key类型, Map输出value类型>
+ * 输入key表示当前行的第一个byte是整个文件的第几个byte
  * @author i.m.superman
  */
 public class CountMapper extends MapReduceBase implements Mapper<LongWritable, Text, Text, IntWritable> {
