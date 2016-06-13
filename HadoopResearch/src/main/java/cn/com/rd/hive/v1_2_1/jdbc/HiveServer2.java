@@ -15,15 +15,15 @@ public class HiveServer2 {
 		// 加载驱动类
 		Class.forName(DRIVERNAME);
 		// JDBC 连接对象
-		Connection conn = DriverManager.getConnection("jdbc:hive2://rd.hadoop14:10000/default", "hive", "hive");
+		Connection conn = DriverManager.getConnection("jdbc:hive2://hadoop12.rd:10000/default", "hive", "hive");
 		// 执行对象
 		Statement statement = conn.createStatement();
 		// 测试用表名
-		String tableName = "rdtest";
+		String tableName = "rdtest_2";
 		// 判断表是否存在，存在则 DROP
 		statement.execute("drop table if exists " + tableName);
 		// 创建测试表
-		statement.execute("create table " + tableName + " (key int, value string)");
+		statement.execute("create table " + tableName + " (key_2 int, value_2 string)");
 		// 查询当前的所有表名
 		ResultSet resultSet = statement.executeQuery("show tables");
 		if (resultSet.next()) {
