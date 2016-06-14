@@ -1,16 +1,18 @@
 package cn.com.qr.ssh.ganymed;
 
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.File;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ch.ethz.ssh2.Connection;
+import ch.ethz.ssh2.SCPClient;
 import ch.ethz.ssh2.SFTPv3Client;
 import ch.ethz.ssh2.Session;
-import ch.ethz.ssh2.StreamGobbler;
 
 /**
  * SSH 操作类
@@ -34,9 +36,9 @@ public class SSHOperator {
 	 */
 	private SFTPv3Client operatClient = null;
 	/**
-	 * 服务器 IP 或主机名
+	 * scp 客户端对象
 	 */
-	private String host = "";
+	private SCPClient scpClient = null;
 	/**
 	 * 使用默认接口（22）连接远程服务器
 	 * @param host                 主机名/IP
@@ -56,8 +58,6 @@ public class SSHOperator {
 	 * @throws Exception
 	 */
 	public void connect(String host, String username, String password, int port) throws Exception {
-		// 记录主机 IP 或主机名
-		this.host = host;
 		// 初始化 Connection
 		conn = new Connection(host, port);
 		// 连接目标服务器
@@ -74,19 +74,29 @@ public class SSHOperator {
 		 *  执行多条命令时，使用 && 分隔
 		 *  eg：mkdir -p /APP/test && cd /APP/test
 		 */
-		session = conn.openSession();
+//		session = conn.openSession();
 		// 创建 Client
 		operatClient = new SFTPv3Client(conn);
+		// 创建 scp 客户端对象
+		scpClient = conn.createSCPClient();
 	}
 	/**
 	 * 关闭连接
 	 */
 	public void close() {
-		session.close();
 		operatClient.close();
 		conn.close();
 	}
-	
+	/**
+	 * 远程执行命令
+	 * @param cmd               命令
+	 * @throws Exception
+	 */
+	public void executeCommand(String cmd) throws Exception {
+		session = conn.openSession();
+		session.execCommand(cmd);
+		session.close();
+	}
 	/**
 	 * 删除文件夹
 	 * @param dirPath   文件夹路径
@@ -101,7 +111,7 @@ public class SSHOperator {
 	 * @param targetPath   文件或文件夹路径
 	 */
 	public void rm(String targetPath) throws Exception {
-		session.execCommand("rm -rf " + targetPath);
+		executeCommand("rm -rf " + targetPath);
 		logger.info("删除文件夹 [" + targetPath + "] 下的全部文件和文件夹");
 	}
 	/**
@@ -120,29 +130,65 @@ public class SSHOperator {
 	 * @param posixPermissions  文件夹权限
 	 */
 	public void mkMultiDir(String dirPath, int posixPermissions) throws Exception {
-		session.execCommand("mkdir -p -m " + posixPermissions + " " + dirPath);
+		executeCommand("mkdir -p -m " + posixPermissions + " " + dirPath);
 		logger.info("创建文件夹 [" + dirPath + "]");
 	}
 	/**
 	 * 将本地文件夹上传到远程服务器上
-	 * @param localDir      本地文件夹路径
-	 * @param remoteDir  远程文件夹路径
+	 * @param localObj      本地文件或文件夹路径
+	 * @param remoteDir   远程文件夹路径
 	 * @throws Exception
 	 */
-	public void uploadDir(String localDir, String remoteDir) throws Exception {
-		// 构建 scp 命令
-		StringBuffer command = new StringBuffer("");
-		command.append("scp -r ").append(localDir).append(" ").append(host).append(":").append(remoteDir);
-		logger.info("scp 命令 [" + command + "]");
-		// 执行 scp 命令
-		session.execCommand(command.toString());
-		// 获取执行命令的反馈信息
-		InputStream stdout = new StreamGobbler(session.getStdout());
-		BufferedReader br = new BufferedReader(new InputStreamReader(stdout));
-		String line = "";
-		while((line = br.readLine()) != null) {
-			logger.info(line);
+	public void uploadDir(String localObj, String remoteDir) throws Exception {
+		// 判断上传的是否为文件夹
+		File uploadObj = new File(localObj);
+		// 判断上传文件是否存在
+		if(!uploadObj.exists()) {
+			logger.error("上传文件 [" + uploadObj.getParent() + "] 不存在!");
+			throw new Exception("上传文件不存在");
 		}
-		br.close();
+		// 判断上传文件是否为文件
+		if(uploadObj.isFile()) {
+			// 删除远程服务器上的文件
+			executeCommand("rm -rf " + localObj);
+			// 上传文件至远程服务器
+			scpClient.put(localObj, remoteDir);
+			// 上传完成，退出方法
+			return;
+		} else {
+			/*
+			 *  上传文件对应表
+			 *  Map<FilePath, FileParentDirPath>
+			 */
+			Map<String, String> uploadFileMap = new HashMap<>();
+			Set<String> dirSet = new HashSet<>();
+			getAllFilePath(uploadObj, uploadFileMap);
+			dirSet.addAll(uploadFileMap.values());
+			// 遍历列表
+			for(String dirPath : dirSet) {
+				executeCommand("mkdir -p " + dirPath);
+			}
+			for(String uploadFilePath : uploadFileMap.keySet()) {
+				// 上传文件至远程服务器
+				scpClient.put(uploadFilePath, uploadFileMap.get(uploadFilePath));
+				logger.info("Upload File [" + uploadFilePath + "] Completed ~");
+			}
+		}
+	}
+	/**
+	 * 递归遍历文件夹，获取该文件夹下所有的文件路径
+	 * @param uploadDirObj    目标文件夹
+	 * @param uploadPathList  文件路径列表
+	 * 
+	 */
+	private void getAllFilePath(File uploadDirObj, Map<String, String> uploadFileMap) {
+		// 遍历文件夹
+		for(File file : uploadDirObj.listFiles()) {
+			if(file.isFile()) {
+				uploadFileMap.put(file.getPath(), file.getParent());
+			} else {
+				getAllFilePath(file, uploadFileMap);
+			}
+		}
 	}
 }
