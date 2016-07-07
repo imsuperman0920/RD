@@ -1,4 +1,4 @@
-package cn.com.qr.java.fj;
+package cn.com.rd.java.fj;
 
 import java.io.BufferedReader;
 import java.io.File;

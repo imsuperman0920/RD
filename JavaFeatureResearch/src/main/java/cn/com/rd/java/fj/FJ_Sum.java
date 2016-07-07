@@ -1,4 +1,4 @@
-package cn.com.qr.java.fj;
+package cn.com.rd.java.fj;
 
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Future;
