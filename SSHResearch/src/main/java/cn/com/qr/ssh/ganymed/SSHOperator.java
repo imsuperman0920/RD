@@ -1,6 +1,8 @@
 package cn.com.qr.ssh.ganymed;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -13,6 +15,7 @@ import ch.ethz.ssh2.Connection;
 import ch.ethz.ssh2.SCPClient;
 import ch.ethz.ssh2.SFTPv3Client;
 import ch.ethz.ssh2.Session;
+import ch.ethz.ssh2.StreamGobbler;
 
 /**
  * SSH 操作类
@@ -95,6 +98,14 @@ public class SSHOperator {
 	public void executeCommand(String cmd) throws Exception {
 		session = conn.openSession();
 		session.execCommand(cmd);
+		// 输出返回信息
+		BufferedReader br = new BufferedReader(new InputStreamReader(new StreamGobbler(session.getStdout())));
+		while(true) {
+			String line = br.readLine();
+			if(line == null) {break;}
+			logger.debug(line);
+		}
+		br.close();
 		session.close();
 	}
 	/**
@@ -171,6 +182,10 @@ public class SSHOperator {
 			for(String uploadFilePath : uploadFileMap.keySet()) {
 				// 上传文件至远程服务器
 				scpClient.put(uploadFilePath, uploadFileMap.get(uploadFilePath));
+				// 为 sh 脚本文件赋予执行权限
+				if(uploadFilePath.endsWith(".sh")) {
+					executeCommand("chmod +x " + uploadFilePath);
+				}
 				logger.info("Upload File [" + uploadFilePath + "] Completed ~");
 			}
 		}

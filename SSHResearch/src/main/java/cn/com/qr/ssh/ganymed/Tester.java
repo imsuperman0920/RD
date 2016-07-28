@@ -5,5 +5,6 @@ public class Tester {
 		SSHOperator oper = new SSHOperator();
 		oper.connect(args[0], args[1], args[2]);
 		oper.uploadDir(args[3], args[4]);
+		oper.executeCommand("bash /APP/test/testsh.sh");
 	}
 }
